@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClimbPicks - Add Climb</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>ClimbPicks</h1>
+        <nav>
+            <a href="index.html">Add Climb</a>
+            <a href="view.html">View Climbs</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Add a New Climb</h2>
+        <div id="add-climb-container">
+            <div id="climb-form">
+                <input type="file" id="image-upload" accept="image/*">
+                <canvas id="canvas" width="1024" height="768" style="display: none;"></canvas>
+                <div id="holds-toolbar">
+                    <button data-hold-type="hand" style="background-color: blue; color: white;">Hand Hold</button>
+                    <button data-hold-type="foot" style="background-color: yellow;">Foot Hold</button>
+                    <button data-hold-type="start" style="background-color: green; color: white;">Start Hold</button>
+                    <button data-hold-type="end" style="background-color: red; color: white;">End Hold</button>
+                    <button id="undo-hold">Undo</button>
+                </div>
+                <input type="text" id="description" placeholder="Description">
+                <input type="text" id="location" placeholder="Location">
+                <input type="text" id="difficulty" placeholder="Difficulty">
+                <input type="date" id="date-added">
+                <button id="save-climb">Save Climb</button>
+            </div>
+        </div>
+    </main>
+    <script src="storage.js"></script>
+    <script src="ui.js"></script>
+    <script src="app.js"></script>
+    <div id="status-message"></div>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClimbPicks - View Climbs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>ClimbPicks</h1>
+        <nav>
+            <a href="index.html">Add Climb</a>
+            <a href="view.html">View Climbs</a>
+        </nav>
+    </header>
+    <main>
+        <h2>All Climbs</h2>
+        <div id="climbs-list"></div>
+        <div id="import-export-container">
+            <button id="export-data">Export Data</button>
+            <input type="file" id="import-data" accept=".json">
+        </div>
+    </main>
+    <script src="storage.js"></script>
+    <script src="ui.js"></script>
+    <script src="view.js"></script>
+    <div id="status-message"></div>
+</body>
+</html>
