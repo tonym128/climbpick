@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const climbsList = document.getElementById('climbs-list');
     const exportButton = document.getElementById('export-data');
     const importInput = document.getElementById('import-data');
+    const clearButton = document.getElementById('clear-data');
 
     function renderClimbs() {
         console.log('Rendering climbs');
@@ -83,6 +84,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             reader.readAsText(file);
+        }
+    });
+
+    clearButton.addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete all climbs? This action cannot be undone.')) {
+            if (ClimbStore.clearAll()) {
+                renderClimbs();
+                showStatusMessage('All climbs have been deleted.', 'success');
+            } else {
+                showStatusMessage('Failed to delete climbs.', 'error');
+            }
         }
     });
 

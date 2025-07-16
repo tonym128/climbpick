@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const climbDetailsContainer = document.getElementById('climb-details');
     const editControls = document.getElementById('edit-controls');
     const editClimbButton = document.getElementById('edit-climb');
+    const deleteClimbButton = document.getElementById('delete-climb');
     const saveClimbButton = document.getElementById('save-climb');
     const cancelEditButton = document.getElementById('cancel-edit');
     const holdsToolbarEdit = document.getElementById('holds-toolbar-edit');
@@ -144,16 +145,25 @@ document.addEventListener('DOMContentLoaded', () => {
     editClimbButton.addEventListener('click', () => {
         isEditing = true;
         editClimbButton.style.display = 'none';
+        deleteClimbButton.style.display = 'none';
         saveClimbButton.style.display = 'inline-block';
         cancelEditButton.style.display = 'inline-block';
         holdsToolbarEdit.style.display = 'block';
         renderClimbDetails(currentClimb);
     });
 
+    deleteClimbButton.addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete this climb?')) {
+            ClimbStore.deleteClimb(climbId);
+            window.location.href = 'view.html';
+        }
+    });
+
     cancelEditButton.addEventListener('click', () => {
         isEditing = false;
         editedHolds = JSON.parse(JSON.stringify(currentClimb.holds));
         editClimbButton.style.display = 'inline-block';
+        deleteClimbButton.style.display = 'inline-block';
         saveClimbButton.style.display = 'none';
         cancelEditButton.style.display = 'none';
         holdsToolbarEdit.style.display = 'none';
@@ -183,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ClimbStore.updateClimb(currentClimb)) {
             isEditing = false;
             editClimbButton.style.display = 'inline-block';
+            deleteClimbButton.style.display = 'inline-block';
             saveClimbButton.style.display = 'none';
             cancelEditButton.style.display = 'none';
             holdsToolbarEdit.style.display = 'none';

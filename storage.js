@@ -38,4 +38,23 @@ class ClimbStore {
         climbs = climbs.map(climb => climb.id === updatedClimb.id ? updatedClimb : climb);
         return ClimbStore.saveClimbs(climbs);
     }
+
+    static deleteClimb(id) {
+        console.log('Deleting climb with id:', id);
+        let climbs = ClimbStore.getClimbs();
+        climbs = climbs.filter(climb => climb.id !== id);
+        return ClimbStore.saveClimbs(climbs);
+    }
+
+    static clearAll() {
+        console.log('Clearing all climbs from localStorage');
+        try {
+            localStorage.removeItem('climbs');
+            console.log('Successfully cleared all climbs.');
+            return true;
+        } catch (e) {
+            console.error("Error clearing localStorage", e);
+            return false;
+        }
+    }
 }
