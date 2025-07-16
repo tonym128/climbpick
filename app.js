@@ -87,7 +87,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const currentUser = ClimbStore.getCurrentUser();
         const climb = {
             id: Date.now().toString(),
             description: descriptionInput.value,
@@ -99,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             canvasWidth: canvas.width,
             canvasHeight: canvas.height,
             logbook: {
-                [currentUser]: {
+                ["You"]: {
                     attempts: 0,
                     ascends: 0
                 }
