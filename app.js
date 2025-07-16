@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveClimbButton = document.getElementById('save-climb');
 
     let image = null;
+    let imageData = null;
     let holds = [];
     let currentHoldType = 'hand';
     const holdColors = {
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!file) {
             return;
         }
+        holds = [];
 
         const compressorOptions = {
             quality: 0.6,
@@ -46,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     canvas.height = image.height;
                     canvas.style.display = 'block';
                     drawImage();
+                    imageData = canvas.toDataURL('image/jpeg');
                 };
                 image.src = imageURL;
             },
@@ -90,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             location: locationInput.value,
             difficulty: difficultyInput.value,
             dateAdded: dateAddedInput.value,
-            imageData: image,
+            imageData: imageData,
             holds: holds,
             canvasWidth: canvas.width,
             canvasHeight: canvas.height,
