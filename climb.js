@@ -61,12 +61,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const holdsOverlay = document.getElementById('climb-image-container');
         const climbImage = document.getElementById('climb-main-image');
 
-        climbImage.onload = () => {
+        const drawHolds = () => {
+            // Clear existing holds
+            holdsOverlay.querySelectorAll('.hold-element').forEach(el => el.remove());
+
             const imageWidth = climbImage.offsetWidth;
             const imageHeight = climbImage.offsetHeight;
 
             climb.holds.forEach(hold => {
                 const holdElement = document.createElement('div');
+                holdElement.className = 'hold-element'; // Add a class to easily select them later
                 holdElement.style.position = 'absolute';
                 holdElement.style.left = `${(hold.x / climb.canvasWidth) * imageWidth}px`;
                 holdElement.style.top = `${(hold.y / climb.canvasHeight) * imageHeight}px`;
@@ -78,6 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 holdsOverlay.appendChild(holdElement);
             });
         };
+
+        climbImage.onload = drawHolds;
+        window.addEventListener('resize', drawHolds);
     }
 
     function renderUserLogbook(climb) {
