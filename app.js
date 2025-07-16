@@ -34,12 +34,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const compressorOptions = {
             quality: 0.6,
             retainExif: false,
-            width: 1024,
-            height: 768,
+            maxWidth: 1024,
+            maxHeight: 1024,
             mimeType: "image/jpeg",
             resize: 'contain',
-            convertSize: 1,
-            convertTypes: ['image/png', 'image/webp'],
+            convertSize: 100000,
+            convertTypes: ['image/jpeg', 'image/png', 'image/webp'],
             success(result) {
                 const imageURL = URL.createObjectURL(result);
                 image = new Image();

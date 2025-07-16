@@ -175,20 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctx = canvas.getContext('2d');
         const image = new Image();
         image.onload = () => {
-            const maxWidth = 1024;
-            const aspectRatio = image.width / image.height;
-            let newWidth = image.width;
-            let newHeight = image.height;
-
-            if (newWidth > maxWidth) {
-                newHeight = maxWidth / aspectRatio;
-                newWidth = maxWidth;
-            }
-
-            canvas.width = newWidth;
-            canvas.height = newHeight;
-            document.getElementById('climb-image-container-edit').style.width = `${newWidth}px`;
-            document.getElementById('climb-image-container-edit').style.height = `${newHeight}px`;
+            document.getElementById('climb-image-container-edit').style.width = `${image.width}px`;
+            document.getElementById('climb-image-container-edit').style.height = `${image.height}px`;
             drawEditCanvas(ctx, image);
         };
         image.src = climb.imageData;
