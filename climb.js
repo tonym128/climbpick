@@ -1,14 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
     const climbDetailsContainer = document.getElementById('climb-details');
+    const userLogbookContainer = document.getElementById('user-logbook-container');
     const editControls = document.getElementById('edit-controls');
     const editClimbButton = document.getElementById('edit-climb');
     const deleteClimbButton = document.getElementById('delete-climb');
     const saveClimbButton = document.getElementById('save-climb');
     const cancelEditButton = document.getElementById('cancel-edit');
     const holdsToolbarEdit = document.getElementById('holds-toolbar-edit');
-    const userSelect = document.getElementById('user-select');
-    const newUserInput = document.getElementById('new-user-name');
-    const addUserButton = document.getElementById('add-user');
 
     const urlParams = new URLSearchParams(window.location.search);
     const climbId = urlParams.get('id');
@@ -19,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentHoldType = 'hand';
     let selectedHoldIndex = -1;
     let isDragging = false;
-    let currentUser = ClimbStore.getCurrentUser();
 
     const holdColors = {
         hand: 'blue',
@@ -32,31 +29,14 @@ document.addEventListener('DOMContentLoaded', () => {
         currentClimb = ClimbStore.getClimb(climbId);
         if (currentClimb) {
             editedHolds = JSON.parse(JSON.stringify(currentClimb.holds));
-            populateUserSelect();
             renderClimbDetails(currentClimb);
+            renderUserLogbook(currentClimb);
             editControls.style.display = 'block';
         } else {
             climbDetailsContainer.innerHTML = '<p>Climb not found.</p>';
         }
     } else {
         climbDetailsContainer.innerHTML = '<p>No climb specified.</p>';
-    }
-
-    function populateUserSelect() {
-        userSelect.innerHTML = '';
-        const users = Object.keys(currentClimb.logbook || {});
-        if (!users.includes(currentUser)) {
-            users.push(currentUser);
-        }
-        users.forEach(user => {
-            const option = document.createElement('option');
-            option.value = user;
-            option.textContent = user;
-            if (user === currentUser) {
-                option.selected = true;
-            }
-            userSelect.appendChild(option);
-        });
     }
 
     function renderClimbDetails(climb) {
@@ -68,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderViewMode(climb) {
-        const userLog = climb.logbook[currentUser] || { attempts: 0, ascends: 0 };
         climbDetailsContainer.innerHTML = `
             <h2>${climb.description}</h2>
             <p><strong>Location:</strong> ${climb.location}</p>
@@ -76,10 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <p><strong>Date Added:</strong> ${climb.dateAdded}</p>
             <div id="climb-image-container" style="position: relative;">
                 <img id="climb-main-image" src="${climb.imageData}" alt="${climb.description}" style="width: 100%; height: auto;">
-            </div>
-            <div id="attempts-ascends">
-                <p>Attempts: <span id="attempts-count">${userLog.attempts}</span> <button id="add-attempt">+</button> <button id="remove-attempt">-</button></p>
-                <p>Ascends: <span id="ascends-count">${userLog.ascends}</span> <button id="add-ascend">+</button> <button id="remove-ascend">-</button></p>
             </div>
         `;
 
@@ -103,8 +78,83 @@ document.addEventListener('DOMContentLoaded', () => {
                 holdsOverlay.appendChild(holdElement);
             });
         };
+    }
 
-        attachAttemptAscendListeners(climb);
+    function renderUserLogbook(climb) {
+        userLogbookContainer.innerHTML = '<h3>Logbook</h3>';
+        const addUserContainer = document.createElement('div');
+        addUserContainer.innerHTML = `
+            <input type="text" id="new-user-name" placeholder="Add new user">
+            <button id="add-user">Add User</button>
+        `;
+        userLogbookContainer.appendChild(addUserContainer);
+
+        const userList = document.createElement('ul');
+        userList.id = 'user-list';
+        userLogbookContainer.appendChild(userList);
+
+        document.getElementById('add-user').addEventListener('click', () => {
+            const newUserName = document.getElementById('new-user-name').value.trim();
+            if (newUserName && !climb.logbook[newUserName]) {
+                climb.logbook[newUserName] = { attempts: 0, ascends: 0 };
+                ClimbStore.updateClimb(climb);
+                renderUserLogbook(climb);
+            }
+        });
+
+        for (const user in climb.logbook) {
+            const userLog = climb.logbook[user];
+            const userItem = document.createElement('li');
+            userItem.innerHTML = `
+                <span>${user}</span>
+                <div>
+                    <span>Attempts: <span id="attempts-count-${user}">${userLog.attempts}</span></span>
+                    <button class="add-attempt" data-user="${user}">+</button>
+                    <button class="remove-attempt" data-user="${user}">-</button>
+                </div>
+                <div>
+                    <span>Ascends: <span id="ascends-count-${user}">${userLog.ascends}</span></span>
+                    <button class="add-ascend" data-user="${user}">+</button>
+                    <button class="remove-ascend" data-user="${user}">-</button>
+                </div>
+            `;
+            userList.appendChild(userItem);
+        }
+
+        attachLogbookListeners(climb);
+    }
+
+    function attachLogbookListeners(climb) {
+        userLogbookContainer.addEventListener('click', (e) => {
+            const user = e.target.dataset.user;
+            if (!user) return;
+
+            const attemptsCount = document.getElementById(`attempts-count-${user}`);
+            const ascendsCount = document.getElementById(`ascends-count-${user}`);
+
+            if (e.target.classList.contains('add-attempt')) {
+                climb.logbook[user].attempts++;
+            } else if (e.target.classList.contains('remove-attempt')) {
+                if (climb.logbook[user].attempts > 0) {
+                    climb.logbook[user].attempts--;
+                }
+            } else if (e.target.classList.contains('add-ascend')) {
+                climb.logbook[user].ascends++;
+            } else if (e.target.classList.contains('remove-ascend')) {
+                if (climb.logbook[user].ascends > 0) {
+                    climb.logbook[user].ascends--;
+                }
+            }
+
+            if (ClimbStore.updateClimb(climb)) {
+                if (attemptsCount) attemptsCount.textContent = climb.logbook[user].attempts;
+                if (ascendsCount) ascendsCount.textContent = climb.logbook[user].ascends;
+            } else {
+                // Revert if save fails
+                renderUserLogbook(ClimbStore.getClimb(climbId));
+                showStatusMessage('Failed to update climb. The browser storage might be full.', 'error');
+            }
+        });
     }
 
     function renderEditView(climb) {
@@ -116,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <div id="climb-image-container-edit" style="position: relative; width: ${climb.canvasWidth}px; height: ${climb.canvasHeight}px; margin: auto;">
                  <canvas id="edit-canvas"></canvas>
             </div>
-             <div id="attempts-ascends" style="display:none;"></div>
         `;
 
         const canvas = document.getElementById('edit-canvas');
@@ -167,6 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     editClimbButton.addEventListener('click', () => {
         isEditing = true;
+        userLogbookContainer.style.display = 'none';
         editClimbButton.style.display = 'none';
         deleteClimbButton.style.display = 'none';
         saveClimbButton.style.display = 'inline-block';
@@ -184,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cancelEditButton.addEventListener('click', () => {
         isEditing = false;
+        userLogbookContainer.style.display = 'block';
         editedHolds = JSON.parse(JSON.stringify(currentClimb.holds));
         editClimbButton.style.display = 'inline-block';
         deleteClimbButton.style.display = 'inline-block';
@@ -208,18 +259,19 @@ document.addEventListener('DOMContentLoaded', () => {
         currentClimb.difficulty = newDifficulty;
         currentClimb.holds = editedHolds;
 
-        // Update canvas dimensions to reflect the actual rendered size
         const canvas = document.getElementById('edit-canvas');
         currentClimb.canvasWidth = canvas.width;
         currentClimb.canvasHeight = canvas.height;
 
         if (ClimbStore.updateClimb(currentClimb)) {
             isEditing = false;
+            userLogbookContainer.style.display = 'block';
             editClimbButton.style.display = 'inline-block';
             deleteClimbButton.style.display = 'inline-block';
             saveClimbButton.style.display = 'none';
             cancelEditButton.style.display = 'none';
             holdsToolbarEdit.style.display = 'none';
+            renderClimbButton.style.display = 'none';
             renderClimbDetails(currentClimb);
             showStatusMessage('Climb updated successfully!', 'success');
         } else {
@@ -293,80 +345,4 @@ document.addEventListener('DOMContentLoaded', () => {
             isDragging = false;
         });
     }
-
-    function attachAttemptAscendListeners(climb) {
-        const attemptsCount = document.getElementById('attempts-count');
-        const ascendsCount = document.getElementById('ascends-count');
-
-        document.getElementById('add-attempt').addEventListener('click', () => {
-            if (!climb.logbook[currentUser]) {
-                climb.logbook[currentUser] = { attempts: 0, ascends: 0 };
-            }
-            climb.logbook[currentUser].attempts++;
-            if (ClimbStore.updateClimb(climb)) {
-                attemptsCount.textContent = climb.logbook[currentUser].attempts;
-            } else {
-                climb.logbook[currentUser].attempts--;
-                showStatusMessage('Failed to update climb. The browser storage might be full.', 'error');
-            }
-        });
-
-        document.getElementById('remove-attempt').addEventListener('click', () => {
-            if (climb.logbook[currentUser] && climb.logbook[currentUser].attempts > 0) {
-                climb.logbook[currentUser].attempts--;
-                if (ClimbStore.updateClimb(climb)) {
-                    attemptsCount.textContent = climb.logbook[currentUser].attempts;
-                } else {
-                    climb.logbook[currentUser].attempts++;
-                    showStatusMessage('Failed to update climb. The browser storage might be full.', 'error');
-                }
-            }
-        });
-
-        document.getElementById('add-ascend').addEventListener('click', () => {
-            if (!climb.logbook[currentUser]) {
-                climb.logbook[currentUser] = { attempts: 0, ascends: 0 };
-            }
-            climb.logbook[currentUser].ascends++;
-            if(ClimbStore.updateClimb(climb)) {
-                ascendsCount.textContent = climb.logbook[currentUser].ascends;
-            } else {
-                climb.logbook[currentUser].ascends--;
-                showStatusMessage('Failed to update climb. The browser storage might be full.', 'error');
-            }
-        });
-
-        document.getElementById('remove-ascend').addEventListener('click', () => {
-            if (climb.logbook[currentUser] && climb.logbook[currentUser].ascends > 0) {
-                climb.logbook[currentUser].ascends--;
-                if(ClimbStore.updateClimb(climb)) {
-                    ascendsCount.textContent = climb.logbook[currentUser].ascends;
-                } else {
-                    climb.logbook[currentUser].ascends++;
-                    showStatusMessage('Failed to update climb. The browser storage might be full.', 'error');
-                }
-            }
-        });
-    }
-
-    userSelect.addEventListener('change', (e) => {
-        currentUser = e.target.value;
-        ClimbStore.setCurrentUser(currentUser);
-        renderClimbDetails(currentClimb);
-    });
-
-    addUserButton.addEventListener('click', () => {
-        const newUserName = newUserInput.value.trim();
-        if (newUserName) {
-            currentUser = newUserName;
-            ClimbStore.setCurrentUser(currentUser);
-            if (!currentClimb.logbook[currentUser]) {
-                currentClimb.logbook[currentUser] = { attempts: 0, ascends: 0 };
-                ClimbStore.updateClimb(currentClimb);
-            }
-            populateUserSelect();
-            renderClimbDetails(currentClimb);
-            newUserInput.value = '';
-        }
-    });
 });

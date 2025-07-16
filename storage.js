@@ -73,11 +73,5 @@ class ClimbStore {
         }
     }
 
-    static getCurrentUser() {
-        return localStorage.getItem('currentUser') || 'Default User';
-    }
-
-    static setCurrentUser(name) {
-        localStorage.setItem('currentUser', name);
-    }
+    
 }
