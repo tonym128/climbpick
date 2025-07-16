@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
             climbItemsContainer.className = 'climb-items-container';
 
             climbsByLocation[location].forEach(climb => {
+                const totalAttempts = Object.values(climb.logbook || {}).reduce((acc, log) => acc + log.attempts, 0);
+                const totalAscends = Object.values(climb.logbook || {}).reduce((acc, log) => acc + log.ascends, 0);
+
                 const item = document.createElement('div');
                 item.className = 'climb-item';
                 item.innerHTML = `
@@ -36,6 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div>
                         <h4>${climb.description}</h4>
                         <p>Difficulty: ${climb.difficulty}</p>
+                        <p>Attempts: ${totalAttempts}</p>
+                        <p>Ascends: ${totalAscends}</p>
                     </div>
                 `;
                 climbItemsContainer.appendChild(item);

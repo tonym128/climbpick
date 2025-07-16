@@ -2,8 +2,23 @@ class ClimbStore {
     static getClimbs() {
         console.log('Getting climbs from localStorage');
         const climbs = localStorage.getItem('climbs');
-        const parsedClimbs = climbs ? JSON.parse(climbs) : [];
-        console.log('Parsed climbs:', parsedClimbs);
+        let parsedClimbs = climbs ? JSON.parse(climbs) : [];
+        
+        // Data migration for old structure
+        parsedClimbs.forEach(climb => {
+            if (climb.hasOwnProperty('attempts') && climb.hasOwnProperty('ascends')) {
+                climb.logbook = {
+                    'Default User': {
+                        attempts: climb.attempts,
+                        ascends: climb.ascends
+                    }
+                };
+                delete climb.attempts;
+                delete climb.ascends;
+            }
+        });
+
+        console.log('Parsed and migrated climbs:', parsedClimbs);
         return parsedClimbs;
     }
 
@@ -56,5 +71,13 @@ class ClimbStore {
             console.error("Error clearing localStorage", e);
             return false;
         }
+    }
+
+    static getCurrentUser() {
+        return localStorage.getItem('currentUser') || 'Default User';
+    }
+
+    static setCurrentUser(name) {
+        localStorage.setItem('currentUser', name);
     }
 }

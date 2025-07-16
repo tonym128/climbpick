@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveClimbButton = document.getElementById('save-climb');
     const cancelEditButton = document.getElementById('cancel-edit');
     const holdsToolbarEdit = document.getElementById('holds-toolbar-edit');
+    const userSelect = document.getElementById('user-select');
+    const newUserInput = document.getElementById('new-user-name');
+    const addUserButton = document.getElementById('add-user');
 
     const urlParams = new URLSearchParams(window.location.search);
     const climbId = urlParams.get('id');
@@ -16,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentHoldType = 'hand';
     let selectedHoldIndex = -1;
     let isDragging = false;
+    let currentUser = ClimbStore.getCurrentUser();
 
     const holdColors = {
         hand: 'blue',
@@ -28,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentClimb = ClimbStore.getClimb(climbId);
         if (currentClimb) {
             editedHolds = JSON.parse(JSON.stringify(currentClimb.holds));
+            populateUserSelect();
             renderClimbDetails(currentClimb);
             editControls.style.display = 'block';
         } else {
@@ -35,6 +40,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } else {
         climbDetailsContainer.innerHTML = '<p>No climb specified.</p>';
+    }
+
+    function populateUserSelect() {
+        userSelect.innerHTML = '';
+        const users = Object.keys(currentClimb.logbook || {});
+        if (!users.includes(currentUser)) {
+            users.push(currentUser);
+        }
+        users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user;
+            option.textContent = user;
+            if (user === currentUser) {
+                option.selected = true;
+            }
+            userSelect.appendChild(option);
+        });
     }
 
     function renderClimbDetails(climb) {
@@ -46,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderViewMode(climb) {
+        const userLog = climb.logbook[currentUser] || { attempts: 0, ascends: 0 };
         climbDetailsContainer.innerHTML = `
             <h2>${climb.description}</h2>
             <p><strong>Location:</strong> ${climb.location}</p>
@@ -55,8 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <img id="climb-main-image" src="${climb.imageData}" alt="${climb.description}" style="width: 100%; height: auto;">
             </div>
             <div id="attempts-ascends">
-                <p>Attempts: <span id="attempts-count">${climb.attempts}</span> <button id="add-attempt">+</button> <button id="remove-attempt">-</button></p>
-                <p>Ascends: <span id="ascends-count">${climb.ascends}</span> <button id="add-ascend">+</button> <button id="remove-ascend">-</button></p>
+                <p>Attempts: <span id="attempts-count">${userLog.attempts}</span> <button id="add-attempt">+</button> <button id="remove-attempt">-</button></p>
+                <p>Ascends: <span id="ascends-count">${userLog.ascends}</span> <button id="add-ascend">+</button> <button id="remove-ascend">-</button></p>
             </div>
         `;
 
@@ -276,47 +299,74 @@ document.addEventListener('DOMContentLoaded', () => {
         const ascendsCount = document.getElementById('ascends-count');
 
         document.getElementById('add-attempt').addEventListener('click', () => {
-            climb.attempts++;
+            if (!climb.logbook[currentUser]) {
+                climb.logbook[currentUser] = { attempts: 0, ascends: 0 };
+            }
+            climb.logbook[currentUser].attempts++;
             if (ClimbStore.updateClimb(climb)) {
-                attemptsCount.textContent = climb.attempts;
+                attemptsCount.textContent = climb.logbook[currentUser].attempts;
             } else {
-                climb.attempts--;
+                climb.logbook[currentUser].attempts--;
                 showStatusMessage('Failed to update climb. The browser storage might be full.', 'error');
             }
         });
 
         document.getElementById('remove-attempt').addEventListener('click', () => {
-            if (climb.attempts > 0) {
-                climb.attempts--;
+            if (climb.logbook[currentUser] && climb.logbook[currentUser].attempts > 0) {
+                climb.logbook[currentUser].attempts--;
                 if (ClimbStore.updateClimb(climb)) {
-                    attemptsCount.textContent = climb.attempts;
+                    attemptsCount.textContent = climb.logbook[currentUser].attempts;
                 } else {
-                    climb.attempts++;
+                    climb.logbook[currentUser].attempts++;
                     showStatusMessage('Failed to update climb. The browser storage might be full.', 'error');
                 }
             }
         });
 
         document.getElementById('add-ascend').addEventListener('click', () => {
-            climb.ascends++;
+            if (!climb.logbook[currentUser]) {
+                climb.logbook[currentUser] = { attempts: 0, ascends: 0 };
+            }
+            climb.logbook[currentUser].ascends++;
             if(ClimbStore.updateClimb(climb)) {
-                ascendsCount.textContent = climb.ascends;
+                ascendsCount.textContent = climb.logbook[currentUser].ascends;
             } else {
-                climb.ascends--;
+                climb.logbook[currentUser].ascends--;
                 showStatusMessage('Failed to update climb. The browser storage might be full.', 'error');
             }
         });
 
         document.getElementById('remove-ascend').addEventListener('click', () => {
-            if (climb.ascends > 0) {
-                climb.ascends--;
+            if (climb.logbook[currentUser] && climb.logbook[currentUser].ascends > 0) {
+                climb.logbook[currentUser].ascends--;
                 if(ClimbStore.updateClimb(climb)) {
-                    ascendsCount.textContent = climb.ascends;
+                    ascendsCount.textContent = climb.logbook[currentUser].ascends;
                 } else {
-                    climb.ascends++;
+                    climb.logbook[currentUser].ascends++;
                     showStatusMessage('Failed to update climb. The browser storage might be full.', 'error');
                 }
             }
         });
     }
+
+    userSelect.addEventListener('change', (e) => {
+        currentUser = e.target.value;
+        ClimbStore.setCurrentUser(currentUser);
+        renderClimbDetails(currentClimb);
+    });
+
+    addUserButton.addEventListener('click', () => {
+        const newUserName = newUserInput.value.trim();
+        if (newUserName) {
+            currentUser = newUserName;
+            ClimbStore.setCurrentUser(currentUser);
+            if (!currentClimb.logbook[currentUser]) {
+                currentClimb.logbook[currentUser] = { attempts: 0, ascends: 0 };
+                ClimbStore.updateClimb(currentClimb);
+            }
+            populateUserSelect();
+            renderClimbDetails(currentClimb);
+            newUserInput.value = '';
+        }
+    });
 });
