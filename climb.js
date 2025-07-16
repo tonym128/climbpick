@@ -89,16 +89,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderUserLogbook(climb) {
         userLogbookContainer.innerHTML = '<h3>Logbook</h3>';
+
+        const userList = document.createElement('ul');
+        userList.id = 'user-list';
+        userLogbookContainer.appendChild(userList);
+
         const addUserContainer = document.createElement('div');
         addUserContainer.innerHTML = `
             <input type="text" id="new-user-name" placeholder="Add new user">
             <button id="add-user">Add User</button>
         `;
         userLogbookContainer.appendChild(addUserContainer);
-
-        const userList = document.createElement('ul');
-        userList.id = 'user-list';
-        userLogbookContainer.appendChild(userList);
 
         document.getElementById('add-user').addEventListener('click', () => {
             const newUserName = document.getElementById('new-user-name').value.trim();
@@ -166,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <input type="text" id="edit-location" value="${climb.location}">
             <input type="text" id="edit-difficulty" value="${climb.difficulty}">
             <p><strong>Date Added:</strong> ${climb.dateAdded}</p>
-            <div id="climb-image-container-edit" style="position: relative; width: ${climb.canvasWidth}px; height: ${climb.canvasHeight}px; margin: auto;">
+            <div id="climb-image-container-edit" style="position: relative; margin: auto;">
                  <canvas id="edit-canvas"></canvas>
             </div>
         `;
@@ -175,8 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctx = canvas.getContext('2d');
         const image = new Image();
         image.onload = () => {
-            document.getElementById('climb-image-container-edit').style.width = `${image.width}px`;
-            document.getElementById('climb-image-container-edit').style.height = `${image.height}px`;
+            canvas.width = image.naturalWidth;
+            canvas.height = image.naturalHeight;
+            document.getElementById('climb-image-container-edit').style.width = `${image.naturalWidth}px`;
+            document.getElementById('climb-image-container-edit').style.height = `${image.naturalHeight}px`;
             drawEditCanvas(ctx, image);
         };
         image.src = climb.imageData;
@@ -187,13 +190,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function drawEditCanvas(ctx, image) {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.drawImage(image, 0, 0, ctx.canvas.width, ctx.canvas.height);
-        drawHoldsOnCanvas(ctx, editedHolds);
+        drawHoldsOnCanvas(ctx, editedHolds, ctx.canvas.width, ctx.canvas.height);
     }
 
-    function drawHoldsOnCanvas(ctx, holds) {
+    function drawHoldsOnCanvas(ctx, holds, canvasWidth, canvasHeight) {
         holds.forEach((hold, index) => {
+            const displayX = (hold.x / currentClimb.canvasWidth) * canvasWidth;
+            const displayY = (hold.y / currentClimb.canvasHeight) * canvasHeight;
+
             ctx.beginPath();
-            ctx.arc(hold.x, hold.y, 10, 0, Math.PI * 2);
+            ctx.arc(displayX, displayY, 10, 0, Math.PI * 2);
             ctx.fillStyle = holdColors[hold.type];
             ctx.fill();
             if (index === selectedHoldIndex) {
@@ -300,8 +306,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
             const clickedHoldIndex = editedHolds.findIndex(hold => {
-                const dx = hold.x - x;
-                const dy = hold.y - y;
+                const displayX = (hold.x / currentClimb.canvasWidth) * canvas.width;
+                const displayY = (hold.y / currentClimb.canvasHeight) * canvas.height;
+                const dx = displayX - x;
+                const dy = displayY - y;
                 return Math.sqrt(dx * dx + dy * dy) < 10;
             });
 
@@ -311,9 +319,29 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 selectedHoldIndex = -1;
                 isDragging = false;
-                editedHolds.push({ x, y, type: currentHoldType });
+                editedHolds.push({ x: x / (canvas.width / currentClimb.canvasWidth), y: y / (canvas.height / currentClimb.canvasHeight), type: currentHoldType });
             }
             drawEditCanvas(ctx, image);
+        });
+
+        canvas.addEventListener('dblclick', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            const clickedHoldIndex = editedHolds.findIndex(hold => {
+                const displayX = (hold.x / currentClimb.canvasWidth) * canvas.width;
+                const displayY = (hold.y / currentClimb.canvasHeight) * canvas.height;
+                const dx = displayX - x;
+                const dy = displayY - y;
+                return Math.sqrt(dx * dx + dy * dy) < 10;
+            });
+
+            if (clickedHoldIndex !== -1) {
+                editedHolds.splice(clickedHoldIndex, 1);
+                selectedHoldIndex = -1;
+                drawEditCanvas(ctx, image);
+            }
         });
 
         canvas.addEventListener('mousemove', (e) => {
