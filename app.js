@@ -24,30 +24,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     imageUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
+
+        if (!file) {
+            return;
+        }
+
+        const compressorOptions = {
+            quality: 0.6,
+            retainExif: false,
+            width: 1024,
+            height: 768,
+            mimeType: "image/jpeg",
+            resize: 'contain',
+            convertSize: 1,
+            convertTypes: ['image/png', 'image/webp'],
+            success(result) {
+                const imageURL = URL.createObjectURL(result);
                 image = new Image();
                 image.onload = () => {
-                    const maxWidth = 1024;
-                    const aspectRatio = image.width / image.height;
-                    let newWidth = image.width;
-                    let newHeight = image.height;
-
-                    if (newWidth > maxWidth) {
-                        newHeight = maxWidth / aspectRatio;
-                        newWidth = maxWidth;
-                    }
-
-                    canvas.width = newWidth;
-                    canvas.height = newHeight;
+                    canvas.width = image.width;
+                    canvas.height = image.height;
                     canvas.style.display = 'block';
                     drawImage();
                 };
-                image.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
+                image.src = imageURL;
+            },
+            error(err) {
+                console.log(err.message);
+            },
+        };
+
+        new Compressor(file, compressorOptions);
     });
 
     holdsToolbar.addEventListener('click', (e) => {
@@ -73,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveClimbButton.addEventListener('click', () => {
         console.log('Save button clicked');
         if (!image || !descriptionInput.value || !locationInput.value || !difficultyInput.value) {
-            alert('Please fill in all fields and upload an image.');
+            showStatusMessage('Please fill in all fields and upload an image.', 'error');
             return;
         }
 
@@ -83,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             location: locationInput.value,
             difficulty: difficultyInput.value,
             dateAdded: dateAddedInput.value,
-            imageData: getResizedImageData(),
+            imageData: image,
             holds: holds,
             canvasWidth: canvas.width,
             canvasHeight: canvas.height,
@@ -122,18 +129,5 @@ document.addEventListener('DOMContentLoaded', () => {
     function draw() {
         drawImage();
         drawHolds();
-    }
-    
-    function getResizedImageData() {
-        const tempCanvas = document.createElement('canvas');
-        const maxWidth = 1024;
-        const aspectRatio = image.width / image.height;
-        const newHeight = maxWidth / aspectRatio;
-
-        tempCanvas.width = maxWidth;
-        tempCanvas.height = newHeight;
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.drawImage(image, 0, 0, maxWidth, newHeight);
-        return tempCanvas.toDataURL('image/jpeg');
     }
 });
