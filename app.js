@@ -69,8 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('click', (e) => {
         if (!image) return;
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+        const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
         holds.push({ x, y, type: currentHoldType });
         draw();
     });

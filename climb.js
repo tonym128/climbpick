@@ -301,8 +301,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function attachCanvasEventListeners(canvas, ctx, image) {
         canvas.addEventListener('mousedown', (e) => {
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
 
             const clickedHoldIndex = editedHolds.findIndex(hold => {
                 const dx = hold.x - x;
@@ -324,8 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.addEventListener('mousemove', (e) => {
             if (isDragging && selectedHoldIndex !== -1) {
                 const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
                 editedHolds[selectedHoldIndex].x = x;
                 editedHolds[selectedHoldIndex].y = y;
                 drawEditCanvas(ctx, image);
